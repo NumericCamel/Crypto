@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 import string
 import spacy
+from tqdm import tqdm
 
 # Ensure nltk resources are downloaded
 nltk.download('stopwords', quiet=True)
@@ -46,15 +47,17 @@ def apply_sentiment_analysis(text):
     return sia.polarity_scores(text)
 
 def process_dataframe(df):
-    # Preprocess title and selftext
-    df['processed_title'] = df['title'].apply(preprocess_text)
-    df['processed_text'] = df['selftext'].apply(preprocess_text)
+    # Preprocess title and selftext with progress bar
+    tqdm.pandas(desc="Processing text")
+    df['processed_title'] = df['title'].progress_apply(preprocess_text)
+    df['processed_text'] = df['selftext'].progress_apply(preprocess_text)
     
     # Combine processed title and text
     df['combined_text'] = df['processed_title'] + ' ' + df['processed_text']
     
-    # Apply sentiment analysis
-    df['sentiment'] = df['combined_text'].apply(apply_sentiment_analysis)
+    # Apply sentiment analysis with progress bar
+    tqdm.pandas(desc="Analyzing sentiment")
+    df['sentiment'] = df['combined_text'].progress_apply(apply_sentiment_analysis)
     
     # Extract compound sentiment score
     df['sentiment_score'] = df['sentiment'].apply(lambda x: x['compound'])
@@ -63,7 +66,7 @@ def process_dataframe(df):
 
 def main(df):
     # Ensure required columns exist
-    required_columns = ['title', 'selftext', 'date_posted']
+    required_columns = ['title', 'selftext', 'date_posted', 'ups']
     if not all(col in df.columns for col in required_columns):
         raise ValueError(f"DataFrame must contain columns: {', '.join(required_columns)}")
     
@@ -71,14 +74,46 @@ def main(df):
     df['date_posted'] = pd.to_datetime(df['date_posted'], errors='coerce')
     
     # Process the dataframe
+    print("Processing data...")
     processed_df = process_dataframe(df)
     
-    # Select and return relevant columns
-    return processed_df[['date_posted', 'sentiment_score']]
-
-if __name__ == "__main__":
-    # Example usage
-    # df = pd.read_csv('your_data.csv')
-    # result = main(df)
-    # print(result)
-    pass
+    # Calculate weighted sentiment score
+    processed_df['weighted_sentiment'] = processed_df['sentiment_score'] * processed_df['ups']
+    
+    # Group by date and calculate weighted mean sentiment score
+    result = processed_df.groupby(processed_df['date_posted'].dt.date).agg({
+        'weighted_sentiment': 'sum',
+        'ups': 'sum',
+        'sentiment_score': 'mean'  # This is the unweighted mean, kept for comparison
+    }).reset_index()
+    
+    # Calculate weighted mean sentiment score
+    result['weighted_mean_sentiment'] = result['weighted_sentiment'] / result['ups']
+    
+    # Rename columns for clarity
+    result = result.rename(columns={
+        'date_posted': 'date',
+        'sentiment_score': 'unweighted_mean_sentiment'
+    })
+    
+    # Reorder columns
+    result = result[['date', 'weighted_mean_sentiment', 'unweighted_mean_sentiment', 'ups']]
+    
+    # Get the latest date
+    latest_date = result['date'].max().strftime('%Y-%m-%d')
+    
+    # Calculate overall weighted average sentiment score
+    total_weighted_sentiment = (result['weighted_mean_sentiment'] * result['ups']).sum()
+    total_ups = result['ups'].sum()
+    overall_weighted_avg_sentiment = total_weighted_sentiment / total_ups
+    
+    # Create a filename with the latest date
+    filename = f"reddit_sentiment_{latest_date}.csv"
+    
+    # Save the result to a CSV file
+    result.to_csv(filename, index=False)
+    
+    print(f"Data saved to {filename}")
+    print(f"Overall weighted average sentiment score: {overall_weighted_avg_sentiment:.4f}")
+    
+    return result
