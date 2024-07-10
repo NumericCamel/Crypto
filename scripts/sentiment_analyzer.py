@@ -48,15 +48,16 @@ def apply_sentiment_analysis(text):
 
 def process_dataframe(df):
     # Preprocess title and selftext with progress bar
-    tqdm.pandas(desc="Processing text")
+    tqdm.pandas(desc="Processing Title")
     df['processed_title'] = df['title'].progress_apply(preprocess_text)
+    tqdm.pandas(desc="Processing Body")
     df['processed_text'] = df['selftext'].progress_apply(preprocess_text)
     
     # Combine processed title and text
     df['combined_text'] = df['processed_title'] + ' ' + df['processed_text']
     
     # Apply sentiment analysis with progress bar
-    tqdm.pandas(desc="Analyzing sentiment")
+    tqdm.pandas(desc="Analyzing Sentiment")
     df['sentiment'] = df['combined_text'].progress_apply(apply_sentiment_analysis)
     
     # Extract compound sentiment score
@@ -106,14 +107,7 @@ def main(df):
     total_weighted_sentiment = (result['weighted_mean_sentiment'] * result['ups']).sum()
     total_ups = result['ups'].sum()
     overall_weighted_avg_sentiment = total_weighted_sentiment / total_ups
-    
-    # Create a filename with the latest date
-    filename = f"reddit_sentiment_{latest_date}.csv"
-    
-    # Save the result to a CSV file
-    result.to_csv(filename, index=False)
-    
-    print(f"Data saved to {filename}")
+
     print(f"Overall weighted average sentiment score: {overall_weighted_avg_sentiment:.4f}")
     
     return result
