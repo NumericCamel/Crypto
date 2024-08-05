@@ -75,7 +75,7 @@ def sentiment_get(df):
 
 def main(df, aggregate=True, title='title', selftext='selftext', date_posted='date_posted', ups='ups'):
     # Ensure required columns exist
-    required_columns = ['title', 'selftext', 'date_posted', 'ups']
+    required_columns = [title, selftext, date_posted, ups]
     if not all(col in df.columns for col in required_columns):
         raise ValueError(f"DataFrame must contain columns: {', '.join(required_columns)}")
     

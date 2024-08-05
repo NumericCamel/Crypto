@@ -3,7 +3,9 @@ import requests
 import pdb
 from datetime import datetime, timezone
 import os 
-
+import os
+path = 'C:/Users/mulle/Documents/iCloudDrive/Documents/19. GITHUB/Crypto'
+os.chdir(path)
 CLIENT_ID = '8MAahEPJBSixOfm-fQ8yPw'
 SECRET_KEY = 'e3hY0q_c-i1ZCxn8yF-m-iBC3_tc-w'
 
@@ -80,7 +82,9 @@ fiance_reddit_new = process_posts(fiance.json())
 
 all_data = pd.concat([btc_reddit_new, eth_reddit_new, sol_reddit_new, crypto_reddit_new, crypto_cur_reddit_new, fiance_reddit_new])
 all_data.date_posted = pd.to_datetime(all_data.date_posted)
+all_data['selftext'] = all_data['selftext'].fillna('')
 all_data['text'] = all_data['title'] + ' ' + all_data['selftext']
 all_data = all_data.drop_duplicates(subset=['text'], keep='first')
 
-all_data.to_csv('reddit_pull/all_data.csv', index=False)
+all_data.to_csv('data/raw/reddit_pull/all_data.csv', index=False)
+print('Run Successful')
