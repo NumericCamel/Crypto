@@ -6,15 +6,14 @@ import os
 import os
 path = 'C:/Users/mulle/Documents/iCloudDrive/Documents/19. GITHUB/Crypto'
 os.chdir(path)
-CLIENT_ID = '8MAahEPJBSixOfm-fQ8yPw'
-SECRET_KEY = 'e3hY0q_c-i1ZCxn8yF-m-iBC3_tc-w'
+
+CLIENT_ID = 'xxxxx'
+SECRET_KEY = 'xxxxxx'
 
 auth = requests.auth.HTTPBasicAuth(CLIENT_ID, SECRET_KEY)
 
 data = {
-    'grant_type': 'password',
-    'username': 'CamelQuant',
-    'password': 'GoatedMillion619!'
+# Removed Passcodes
 }
 
 headers = {'User-Agent': 'SolanaAPI/0.1'}
